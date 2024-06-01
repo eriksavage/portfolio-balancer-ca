@@ -20,6 +20,8 @@ while (exit != true) {
     case "view":
       const portfolio = await viewPortfoliosMenu(portfolios);
       renderAssets(portfolio.assets);
+      const action = await portfolioMenu()
+      if (action === "dca") await dollarCostAverage(portfolio);
       break;
     case "update":
       console.log(`You have selected: ${selection}`);
@@ -81,6 +83,24 @@ async function viewPortfoliosMenu(portfolios) {
   console.log("No portfolios availble to view, please select Create Portfolio.");
 }
 
+async function portfolioMenu() {
+  return await select({
+    message: 'Select an action',
+    choices: [
+      {
+        name: 'DCA',
+        value: 'dca',
+        description: 'Dollar Cost Average into Portfolio.',
+      },
+      {
+        name: 'Main Menu',
+        value: 'main',
+        description: 'Return to Main Menu.',
+      }
+    ],
+  });
+}
+
 function renderAssets(assets) {
   const assetsTable = assets.map(a => {
     return {
@@ -121,4 +141,26 @@ async function createAsset() {
   const currentSharePrice = await input({ message: 'Enter current share price:' });
 
   return new Asset(stockTicker, desiredPercentage, sharesOwned, currentSharePrice);
+}
+
+async function dollarCostAverage(portfolio) {
+  //TODO: seperate out menu portion from dca calculation locgicce
+  const dcaAmount = await input({ message: 'Enter dollar amount for Dollar Cost Averaging:' });
+
+  const assets = portfolio.assets.map(async a => {
+    let answer = await confirm({ message: `Confirm ${a.stockTicker} Shares Owned = ${a.sharesOwned}` });
+    if (answer == false) a.sharesOwned = await input({ message: 'Enter shares owned:' });
+
+    answer = await confirm({ message: `Confirm ${a.stockTicker} Current Share Price = ${a.currentSharePrice}` });
+    if (answer == false) a.currentSharePrice = await input({ message: 'Enter current share price:' });
+  })
+  portfolio.assets = assets;
+
+  calculateDCA(portfolio);
+
+  return portfolio;
+}
+
+function calculateDCA(portfolio) {
+
 }
